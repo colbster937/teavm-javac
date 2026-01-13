@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Alexey Andreev.
+ *  Copyright 2026 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,6 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.plugins.quality.CheckstyleExtension
+import org.gradle.api.plugins.quality.CheckstylePlugin
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.JavaVersion
 
 pluginManagement {
      repositories {
@@ -46,25 +53,27 @@ dependencyResolutionManagement {
 
 
 gradle.allprojects {
-    tasks.withType(JavaCompile).configureEach {
+    tasks.withType(JavaCompile::class.java).configureEach {
         options.encoding = "UTF-8"
     }
 }
 
 gradle.afterProject {
-    def java = extensions.findByType(JavaPluginExtension)
+    val java = extensions.findByType(JavaPluginExtension::class.java)
     if (java != null) {
-        apply(plugin: CheckstylePlugin)
-        extensions.configure(CheckstyleExtension) {
-            toolVersion = extensions.getByType(VersionCatalogsExtension).named("libs")
-                    .findVersion("checkstyle").get().requiredVersion
+        apply(mapOf("plugin" to CheckstylePlugin::class.java))
+        extensions.configure(CheckstyleExtension::class.java) {
+            val v = extensions.getByType(VersionCatalogsExtension::class.java).named("libs").findVersion("checkstyle").orElse(null)
+            if (v != null) {
+                toolVersion = v.requiredVersion
+            }
         }
         java.sourceCompatibility = JavaVersion.VERSION_25
         java.targetCompatibility = JavaVersion.VERSION_25
     }
 }
 
-include "javac"
-include "compiler"
-include "protocol"
-include "ui"
+include("javac")
+include("compiler")
+include("protocol")
+include("ui")
